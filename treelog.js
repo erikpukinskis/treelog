@@ -51,15 +51,18 @@ function log() {
     if (prefix.length + padding*2 < 40) {
       prefix = prefix + " "
     }
+    prefix = prefix + " →"
     prefix = prefix + repeat(" -", padding)
   }
 
   prefix = prefix+"  "
-
+  var emptyPrefix = repeat(" -", 21)+"  "
+  var first = true
   message.split("\n").forEach(
     function(message) {
       console.log(
-        prefix, message)
+        first ? prefix : emptyPrefix, message)
+      first = false
     }
   )
 
