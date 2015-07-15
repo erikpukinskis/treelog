@@ -2,7 +2,7 @@
 var previousLogLines = []
 
 function log() {
-  var message = Array.prototype.slice.call(arguments).join(" ")
+  var message = Array.prototype.slice.call(arguments).map(argToString).join(" ")
   var stack = getStack()
 
   var logPosition = -1
@@ -88,6 +88,14 @@ function repeat(string, count) {
   for(var repeated = ''; repeated.length < targetLength; repeated += string){}
 
   return repeated 
+}
+
+function argToString(arg) {
+  if (typeof arg == "object") {
+    return JSON.stringify(arg)
+  } else {
+    return arg
+  }
 }
 
 module.exports = log
