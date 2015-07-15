@@ -1,6 +1,6 @@
 {
   "name": "treelog",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Indents log lines according to your stack",
   "main": "treelog.js",
   "repository": {
