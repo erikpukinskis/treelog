@@ -38,6 +38,8 @@ function log() {
     }
   }
 
+  // If we're in the same function we were in last time, we don't need to indent for it:
+
   if (previousLogLines[previousLogLines.length-1] == stack[0]) {
     previousLogLines.pop()
   }
