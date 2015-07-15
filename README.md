@@ -26,8 +26,8 @@ makeBreakfast()
 Will log out:
 
 ```
- makeBreakfast - - - - - - - - - - - - - → so hungry
- - toast - - - - - - - - - - - - - - - - → bread is soft
- - - Object.stove.on - - - - - - - - - - → ignition!
- - toast - - - - - - - - - - - - - - - - → so toasty!
-```
+ makeBreakfast - - - - - - - - - - - - -   so hungry
+ - toast - - - - - - - - - - - - - - - -   bread is soft
+ - - Object.stove.on - - - - - - - - - -   ignition!
+ - toast - - - - - - - - - - - - - - - -   so toasty!
+ ```

@@ -52,7 +52,7 @@ function log() {
     prefix = prefix + repeat(" -", padding)
   }
 
-  prefix = prefix+" →"
+  prefix = prefix+"  "
 
   message.split("\n").forEach(
     function(message) {
