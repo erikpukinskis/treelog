@@ -7,6 +7,9 @@
     "type": "git",
     "url": "https://github.com/erikpukinskis/treelog.git"
   },
+  "scripts": {
+    "test": "node test.js"
+  },
   "license": "ISC",
   "homepage": "https://github.com/erikpukinskis/treelog"
 }
