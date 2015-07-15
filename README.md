@@ -28,6 +28,6 @@ Will log out:
 ```
  makeBreakfast - - - - - - - - - - - - - → so hungry
  - toast - - - - - - - - - - - - - - - - → bread is soft
- - Object.stove.on - - - - - - - - - - - → ignition!
+ - - turnOnStove - - - - - - - - - - - - → ignition!
  - toast - - - - - - - - - - - - - - - - → so toasty!
 ```

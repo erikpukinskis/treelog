@@ -6,21 +6,20 @@ function log() {
   var stack = getStack()
 
   var logPosition = -1
-  var nextPossibleStackMatch = 0
+  var nextPossibleStackMatch = stack.length
 
-  debugger
   while(logItem = previousLogLines[++logPosition]) {
 
     var remainingStackToSearch = stack.slice(nextPossibleStackMatch, stack.length)
 
     var matched = false
 
-    for(var i=nextPossibleStackMatch; i<stack.length; i++) {
+    for(var i=nextPossibleStackMatch; i>=0; i--) {
 
       if (stack[i] == logItem) {
 
         // this log item is still in the stack! leave it there and look for the next log item
-        nextPossibleStackMatch = i+1
+        nextPossibleStackMatch = i-1
         matched = true
         break
       }
@@ -37,6 +36,10 @@ function log() {
 
       break
     }
+  }
+
+  if (previousLogLines[previousLogLines.length-1] == stack[0]) {
+    previousLogLines.pop()
   }
 
   var prefix = repeat(" -", previousLogLines.length)+" "+stack[0]

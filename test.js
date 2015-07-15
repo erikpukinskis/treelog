@@ -7,14 +7,12 @@ function makeBreakfast() {
 
 function toast() {
   log("bread is soft")
-  stove.on()
+  turnOnStove()
   log("so toasty!")
 }
 
-var stove = {
-  on: function() {
-    log("ignition!")
-  }
+function turnOnStove() {
+  log("ignition!")
 }
 
 makeBreakfast()
