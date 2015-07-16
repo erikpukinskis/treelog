@@ -1,50 +1,133 @@
 
-var previousLogLines = []
-
+var logEntries = []
+/*
+watch("logPosition")
+watch("logEntries")
+watch("stackPosition")
+watch("stack")
+watch("stackEntry")
+watch("possibleEntryFromLog")
+watch("newEntryFromStack")
+watch("remainingStackToSearch")
+*/
 function log() {
   var message = Array.prototype.slice.call(arguments).map(argToString).join(" ")
   var stack = getStack()
 
+  debugger
+
+  removeLogEntriesFromScopesWeDitched(logEntries, stack)
+
+  var newEntryFromStack = stack[0]
+
+  removePreviousEntryIfStillInScope(logEntries, newEntryFromStack)
+
+  printLog(message, newEntryFromStack, logEntries)
+
+}
+
+function getStack() {
+  try {
+    throw new Error()
+  } catch(e) {
+
+    return e.stack.split("\n").slice(3).map(function(line) {
+
+      var reference = line.match(/at ([^( ]+)/)[1]
+      var lineNumber = line.match(/(:[0-9]+):/)[1]
+
+      return {
+        reference: reference,
+        line: lineNumber
+      }
+    })
+  }
+}
+
+function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
+
   var logPosition = -1
-  var nextPossibleStackMatch = stack.length
+  var stackPosition = stack.length-1
 
-  while(logItem = previousLogLines[++logPosition]) {
+  while(possibleEntryFromLog = logEntries[++logPosition]) {
 
-    var remainingStackToSearch = stack.slice(nextPossibleStackMatch, stack.length)
+    debugger
+
+    var remainingStackToSearch = stack.slice(stackPosition, stack.length) // debug only
 
     var matched = false
 
-    for(var i=nextPossibleStackMatch; i>=0; i--) {
+    // We walk backwards through the stack, looking for the possibleEntryFromLog. If we find it, we start looking for the next one. If we don't find it, we know the rest of the stack is gone, and we just move on to logging out to the console.
 
-      if (stack[i] == logItem) {
+    for(var i=stackPosition; i>=0; i--) {
 
-        // this log item is still in the stack! leave it there and look for the next log item
-        nextPossibleStackMatch = i-1
+      var stackEntry = stack[i]
+      debugger
+
+      if (stackEntry.reference == possibleEntryFromLog.reference) {
+
+        // Looks like the most recent log item is still in the stack! Leave it there and start looking for the log item before that.
+
+        stackPosition = i-1
         matched = true
         break
       }
     }
 
     if (!matched) {
-      // we're no longer within the stack frame of the previous log item.
 
-      // Pop everything after this off the stack:
+      // If we got to the end of the stack without finding the log entry we're looking for, we want to discard the parts of the log that we apparently moved on from.
 
-      previousLogLines = previousLogLines.slice(0, logPosition)
+      debugger
+
+      logEntries = logEntries.slice(0, logPosition)
 
       // And then stop looking for more:
 
       break
     }
   }
+}
 
-  // If we're in the same function we were in last time, we don't need to indent for it:
+function removePreviousEntryIfStillInScope(logEntries, newEntryFromStack) {
 
-  if (previousLogLines[previousLogLines.length-1] == stack[0]) {
-    previousLogLines.pop()
+  var previousEntry = logEntries[logEntries.length-1]
+
+  debugger 
+
+  if (previousEntry) {
+    var sameLineNumber = newEntryFromStack.lineNumber == previousEntry.lineNumber
+
+    var sameReference = newEntryFromStack.reference == previousEntry.reference
+
+    debugger 
+
+    if (sameReference && sameLineNumber) {
+
+      debugger 
+
+      // We DO want to indent if the line number is the same, because it means it's a second run
+
+    } else if (sameReference && !sameLineNumber) {
+
+      // We're in the same function as before but the line number is different. we assume we're in the same scope, so we pop the last one off the stack
+
+      debugger 
+
+      logEntries.pop()
+
+    } else {
+
+      debugger 
+
+      // different reference, definitely leave the previous one in place so the next one is added on top
+    }
   }
+}
 
-  var prefix = repeat(" -", previousLogLines.length)+" "+stack[0]
+function printLog(message, newEntryFromStack, logEntries) {
+
+  var prefix = repeat(" -", logEntries.length)+" "+newEntryFromStack.reference
 
   if (prefix.length < 40) {
     var padding = Math.floor((40 - prefix.length) / 2)
@@ -66,21 +149,13 @@ function log() {
     }
   )
 
-  previousLogLines.push(stack[0])
+  logEntries.push(newEntryFromStack)
+
+  debugger 
 }
 
-function getStack() {
-  try {
-    throw new Error()
-  } catch(e) {
-    return e.stack.split("\n").slice(3).map(function(line) {
-      var func = line.match(/at ([^( ]+)/)[1]
-      var lineNumber = line.match(/(:[0-9]+):/)[1]
 
-      return func
-    })
-  }
-}
+// Helpers
 
 function repeat(string, count) {
   var targetLength = string.length * count
@@ -97,5 +172,6 @@ function argToString(arg) {
     return arg
   }
 }
+
 
 module.exports = log
