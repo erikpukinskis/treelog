@@ -2,7 +2,6 @@
 var logEntries = []
 
 function log() {
-  var message = Array.prototype.slice.call(arguments).map(argToString).join(" ")
   var stack = getStack()
 
   removeLogEntriesFromScopesWeDitched(logEntries, stack)
@@ -11,7 +10,11 @@ function log() {
 
   removePreviousEntryIfStillInScope(logEntries, newEntryFromStack)
 
+  var message = Array.prototype.slice.call(arguments).map(argToString).join(" ")
+
   printLog(message, newEntryFromStack, logEntries)
+
+  logEntries.push(newEntryFromStack)
 }
 
 
@@ -23,11 +26,11 @@ function getStack() {
 
     return e.stack.split("\n").slice(3).map(function(line) {
 
-      var reference = line.match(/at ([^( ]+)/)[1]
-      var lineNumber = line.match(/(:[0-9]+):/)[1]
+      var functionName = line.match(/at ([^( ]+)/)[1]
+      var lineNumber = line.match(/:[0-9]+:/)[0]
 
       return {
-        reference: reference,
+        functionName: functionName,
         line: lineNumber
       }
     })
@@ -46,13 +49,13 @@ function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
 
     var matched = false
 
-    // We walk backwards through the stack, looking for the possibleEntryFromLog. If we find it, we start looking for the next one. If we don't find it, we know the rest of the stack is gone, and we just move on to logging out to the console.
+    // We walk backwards through the stack, looking for an entry that matches what we're looking for in the log. If we find it, we start looking for the next one. If we don't find it, we know the rest of the stack is gone, and we just move on to logging out to the console.
 
     for(var i=stackPosition; i>=0; i--) {
 
       var stackEntry = stack[i]
 
-      matched = stackEntry.reference == possibleEntryFromLog.reference
+      matched = stackEntry.functionName == possibleEntryFromLog.functionName
 
       if (matched) {
 
@@ -61,6 +64,7 @@ function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
         stackPosition = i-1
         leaveLogUpTo = logPosition
         matched = true
+
         break
       }
     }
@@ -84,26 +88,20 @@ function removePreviousEntryIfStillInScope(logEntries, newEntryFromStack) {
 
   var previousEntry = logEntries[logEntries.length-1]
 
+  if (!previousEntry) { return }
 
-  if (previousEntry) {
-    var sameLineNumber = newEntryFromStack.lineNumber == previousEntry.lineNumber
+  var sameLineNumber = newEntryFromStack.lineNumber == previousEntry.lineNumber
 
-    var sameReference = newEntryFromStack.reference == previousEntry.reference
+  var sameFunction = newEntryFromStack.functionName == previousEntry.functionName
 
-    if (sameReference && sameLineNumber) {
+  if (sameFunction && !sameLineNumber) {
 
-      // We DO want to indent if the line number is the same, because it means it's a second run
+    // We don't want to go deeper if we're just logging again in the same function, so we pop the previous log entry off the log so there will be only one for this function.
 
-    } else if (sameReference && !sameLineNumber) {
+    logEntries.pop()
 
-      // We're in the same function as before but the line number is different. we assume we're in the same scope, so we pop the last one off the stack
+    // But if we're at the exact same line again, it means we called this function again recursively and we DO want to indent.
 
-      logEntries.pop()
-
-    } else {
-
-      // different reference, definitely leave the previous one in place so the next one is added on top
-    }
   }
 }
 
@@ -111,29 +109,32 @@ function removePreviousEntryIfStillInScope(logEntries, newEntryFromStack) {
 
 function printLog(message, newEntryFromStack, logEntries) {
 
-  var prefix = repeat(" -", logEntries.length)+" "+newEntryFromStack.reference
+  var emptyPrefix = repeat(" -", 21)+"  "
+
+  var prefix = repeat(" -", logEntries.length)
+    + " "
+    + newEntryFromStack.functionName
+    + " →"
 
   if (prefix.length < 40) {
     var padding = Math.floor((40 - prefix.length) / 2)
     if (prefix.length + padding*2 < 40) {
       prefix = prefix + " "
     }
-    prefix = prefix + " →"
     prefix = prefix + repeat(" -", padding)
   }
 
   prefix = prefix+"  "
-  var emptyPrefix = repeat(" -", 21)+"  "
+
   var first = true
   message.split("\n").forEach(
     function(message) {
-      console.log(
-        first ? prefix : emptyPrefix, message)
+
+      console.log(first ? prefix : emptyPrefix, message)
+
       first = false
     }
   )
-
-  logEntries.push(newEntryFromStack)
 }
 
 
@@ -143,7 +144,12 @@ function printLog(message, newEntryFromStack, logEntries) {
 function repeat(string, count) {
   var targetLength = string.length * count
 
-  for(var repeated = ''; repeated.length < targetLength; repeated += string){}
+  for(
+    var repeated = '';
+    repeated.length < targetLength;
+    repeated += string
+  ) {
+  }
 
   return repeated 
 }

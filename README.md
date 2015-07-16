@@ -23,7 +23,7 @@ var stove = {
 makeBreakfast()
 ```
 
-Will log out:
+will log out:
 
 ```
  makeBreakfast → - - - - - - - - - - - - -   so hungry
