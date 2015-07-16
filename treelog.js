@@ -1,20 +1,9 @@
 
 var logEntries = []
-/*
-watch("logPosition")
-watch("logEntries")
-watch("stackPosition")
-watch("stack")
-watch("stackEntry")
-watch("possibleEntryFromLog")
-watch("newEntryFromStack")
-watch("remainingStackToSearch")
-*/
+
 function log() {
   var message = Array.prototype.slice.call(arguments).map(argToString).join(" ")
   var stack = getStack()
-
-  debugger
 
   removeLogEntriesFromScopesWeDitched(logEntries, stack)
 
@@ -23,8 +12,9 @@ function log() {
   removePreviousEntryIfStillInScope(logEntries, newEntryFromStack)
 
   printLog(message, newEntryFromStack, logEntries)
-
 }
+
+
 
 function getStack() {
   try {
@@ -44,16 +34,15 @@ function getStack() {
   }
 }
 
+
+
 function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
 
   var logPosition = -1
   var stackPosition = stack.length-1
+  var leaveLogUpTo = 0
 
   while(possibleEntryFromLog = logEntries[++logPosition]) {
-
-    debugger
-
-    var remainingStackToSearch = stack.slice(stackPosition, stack.length) // debug only
 
     var matched = false
 
@@ -62,13 +51,15 @@ function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
     for(var i=stackPosition; i>=0; i--) {
 
       var stackEntry = stack[i]
-      debugger
 
-      if (stackEntry.reference == possibleEntryFromLog.reference) {
+      matched = stackEntry.reference == possibleEntryFromLog.reference
+
+      if (matched) {
 
         // Looks like the most recent log item is still in the stack! Leave it there and start looking for the log item before that.
 
         stackPosition = i-1
+        leaveLogUpTo = logPosition
         matched = true
         break
       }
@@ -78,9 +69,7 @@ function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
 
       // If we got to the end of the stack without finding the log entry we're looking for, we want to discard the parts of the log that we apparently moved on from.
 
-      debugger
-
-      logEntries = logEntries.slice(0, logPosition)
+      logEntries.splice(leaveLogUpTo)
 
       // And then stop looking for more:
 
@@ -89,22 +78,19 @@ function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
   }
 }
 
+
+
 function removePreviousEntryIfStillInScope(logEntries, newEntryFromStack) {
 
   var previousEntry = logEntries[logEntries.length-1]
 
-  debugger 
 
   if (previousEntry) {
     var sameLineNumber = newEntryFromStack.lineNumber == previousEntry.lineNumber
 
     var sameReference = newEntryFromStack.reference == previousEntry.reference
 
-    debugger 
-
     if (sameReference && sameLineNumber) {
-
-      debugger 
 
       // We DO want to indent if the line number is the same, because it means it's a second run
 
@@ -112,18 +98,16 @@ function removePreviousEntryIfStillInScope(logEntries, newEntryFromStack) {
 
       // We're in the same function as before but the line number is different. we assume we're in the same scope, so we pop the last one off the stack
 
-      debugger 
-
       logEntries.pop()
 
     } else {
-
-      debugger 
 
       // different reference, definitely leave the previous one in place so the next one is added on top
     }
   }
 }
+
+
 
 function printLog(message, newEntryFromStack, logEntries) {
 
@@ -150,9 +134,8 @@ function printLog(message, newEntryFromStack, logEntries) {
   )
 
   logEntries.push(newEntryFromStack)
-
-  debugger 
 }
+
 
 
 // Helpers
@@ -172,6 +155,7 @@ function argToString(arg) {
     return arg
   }
 }
+
 
 
 module.exports = log
