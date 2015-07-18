@@ -1,20 +1,37 @@
+var ramda = require("ramda")
+var filter = ramda.filter
+var contains = ramda.contains
 
 var logEntries = []
 
 function log() {
   var stack = getStack()
 
-  removeLogEntriesFromScopesWeDitched(logEntries, stack)
-
-  var newEntryFromStack = stack[0]
-
-  removePreviousEntryIfStillInScope(logEntries, newEntryFromStack)
-
   var message = Array.prototype.slice.call(arguments).map(argToString).join(" ")
 
-  printLog(message, newEntryFromStack, logEntries)
+  logEntries.push(stack[0])
 
-  logEntries.push(newEntryFromStack)
+  function inSameFunction(a, b) {
+    return a.functionName == b.functionName
+  }
+
+  var functionsInLog = logEntries.map(
+    function(entry) {
+      return entry.functionName
+    }
+  )
+
+  function inLog(entry) {
+    var isIn = contains(entry.functionName)(functionsInLog)
+    return isIn
+  }
+
+  activeEntries = filter(inLog)(stack)
+
+  var depth = calculateDepth(activeEntries)
+
+  printLog(message, depth, stack[0])
+
 }
 
 
@@ -38,82 +55,13 @@ function getStack() {
 }
 
 
-
-function removeLogEntriesFromScopesWeDitched(logEntries, stack) {
-
-  var logPosition = -1
-  var stackPosition = stack.length-1
-  var leaveLogUpTo = 0
-
-  while(possibleEntryFromLog = logEntries[++logPosition]) {
-
-    var matched = false
-
-    // We walk backwards through the stack, looking for an entry that matches what we're looking for in the log. If we find it, we start looking for the next one. If we don't find it, we know the rest of the stack is gone, and we just move on to logging out to the console.
-
-    for(var i=stackPosition; i>=0; i--) {
-
-      var stackEntry = stack[i]
-
-      matched = stackEntry.functionName == possibleEntryFromLog.functionName
-
-      if (matched) {
-
-        // Looks like the most recent log item is still in the stack! Leave it there and start looking for the log item before that.
-
-        stackPosition = i-1
-        leaveLogUpTo = logPosition
-        matched = true
-
-        break
-      }
-    }
-
-    if (!matched) {
-
-      // If we got to the end of the stack without finding the log entry we're looking for, we want to discard the parts of the log that we apparently moved on from.
-
-      logEntries.splice(leaveLogUpTo)
-
-      // And then stop looking for more:
-
-      break
-    }
-  }
-}
-
-
-
-function removePreviousEntryIfStillInScope(logEntries, newEntryFromStack) {
-
-  var previousEntry = logEntries[logEntries.length-1]
-
-  if (!previousEntry) { return }
-
-  var sameLineNumber = newEntryFromStack.lineNumber == previousEntry.lineNumber
-
-  var sameFunction = newEntryFromStack.functionName == previousEntry.functionName
-
-  if (sameFunction && !sameLineNumber) {
-
-    // We don't want to go deeper if we're just logging again in the same function, so we pop the previous log entry off the log so there will be only one for this function.
-
-    logEntries.pop()
-
-    // But if we're at the exact same line again, it means we called this function again recursively and we DO want to indent.
-
-  }
-}
-
-
-
-function printLog(message, newEntryFromStack, logEntries) {
+function printLog(message, depth, newEntry) {
 
   var emptyPrefix = repeat(" -", 21)+"  "
 
-  var prefix = repeat(" -", logEntries.length)
+  var prefix = repeat(" -", depth)
     + " "
-    + newEntryFromStack.functionName
+    + newEntry.functionName
     + " →"
 
   if (prefix.length < 40) {
@@ -136,6 +84,43 @@ function printLog(message, newEntryFromStack, logEntries) {
     }
   )
 }
+
+
+
+
+function calculateDepth(entries) {
+
+  var functionsSeen = []
+  var linesSeen = []
+  var depth = 0
+
+  for(var i=0; i<entries.length; i++) {
+
+    var entry = entries[i]
+    var line = entry.functionName+entry.lineNumber
+
+    var sameFunction = contains(entry.functionName)(functionsSeen)
+
+    var sameLine = contains(line)(linesSeen)
+
+    if (!sameFunction) {
+      depth++
+    } else if (sameFunction && sameLine) {
+      // recursion!
+      depth++
+    } else {
+      // already saw this function. just logging more stuff.
+    }
+
+    functionsSeen.push(entry.functionName)
+    linesSeen.push(line)
+  }
+
+  return depth
+}
+
+
+
 
 
 
