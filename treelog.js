@@ -11,29 +11,16 @@ function log() {
 
   logEntries.push(stack[0])
 
-  function inSameFunction(a, b) {
-    return a.functionName == b.functionName
-  }
-
-  var functionsInLog = logEntries.map(
-    function(entry) {
-      return entry.functionName
-    }
-  )
-
   function inLog(entry) {
-    var isIn = contains(entry.functionName)(functionsInLog)
-    return isIn
+    return contains(entry)(logEntries)
   }
 
-  activeEntries = filter(inLog)(stack)
+  logEntries = filter(inLog)(stack)
 
-  var depth = calculateDepth(activeEntries)
+  var depth = logEntries.length
 
   printLog(message, depth, stack[0])
-
 }
-
 
 
 function getStack() {
@@ -44,12 +31,8 @@ function getStack() {
     return e.stack.split("\n").slice(3).map(function(line) {
 
       var functionName = line.match(/at ([^( ]+)/)[1]
-      var lineNumber = line.match(/:[0-9]+:/)[0]
 
-      return {
-        functionName: functionName,
-        line: lineNumber
-      }
+      return functionName
     })
   }
 }
@@ -61,7 +44,7 @@ function printLog(message, depth, newEntry) {
 
   var prefix = repeat(" -", depth)
     + " "
-    + newEntry.functionName
+    + newEntry
     + " →"
 
   if (prefix.length < 40) {
@@ -84,43 +67,6 @@ function printLog(message, depth, newEntry) {
     }
   )
 }
-
-
-
-
-function calculateDepth(entries) {
-
-  var functionsSeen = []
-  var linesSeen = []
-  var depth = 0
-
-  for(var i=0; i<entries.length; i++) {
-
-    var entry = entries[i]
-    var line = entry.functionName+entry.lineNumber
-
-    var sameFunction = contains(entry.functionName)(functionsSeen)
-
-    var sameLine = contains(line)(linesSeen)
-
-    if (!sameFunction) {
-      depth++
-    } else if (sameFunction && sameLine) {
-      // recursion!
-      depth++
-    } else {
-      // already saw this function. just logging more stuff.
-    }
-
-    functionsSeen.push(entry.functionName)
-    linesSeen.push(line)
-  }
-
-  return depth
-}
-
-
-
 
 
 
